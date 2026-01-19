@@ -122,15 +122,13 @@
         opacity: 0.9;
       }
 
-      /* --- STRUCTURE (Matches test1.html logic) --- */
+      /* --- STRUCTURE --- */
       .glass-box {
         width: 95%;
         max-width: 1255px;
         min-height: 500px;
-        height: auto; /* Fluid Height Logic */
-        position: relative;
+        height: auto;
 
-        /* Visuals */
         background: var(--glass-bg);
         backdrop-filter: blur(25px);
         -webkit-backdrop-filter: blur(25px);
@@ -147,12 +145,11 @@
         z-index: 2;
       }
 
-      /* NO ABSOLUTE POSITIONING HERE - This fixes the mobile sizing */
       .question-card {
         width: 100%;
         flex: 1;
         padding: 40px 50px;
-        display: none; /* Hidden by default */
+        display: none;
         flex-direction: column;
         justify-content: center;
         opacity: 0;
@@ -184,7 +181,7 @@
         align-items: center;
         gap: 15px;
         width: 100%;
-        flex-wrap: wrap; /* Allows wrapping on phones */
+        flex-wrap: wrap;
       }
 
       .radio-wrapper {
@@ -198,7 +195,6 @@
         display: none;
       }
 
-      /* --- BUTTON STYLES (Theme Applied) --- */
       .radio-wrapper label {
         width: 100%;
         height: 65px;
@@ -249,6 +245,7 @@
         justify-content: space-between;
         align-items: center;
         margin-top: auto;
+        gap: 12px;
       }
 
       .nav-btn {
@@ -296,6 +293,15 @@
         animation: fadeIn 0.5s ease forwards;
       }
 
+      /* ✅ DISABLED BUTTON LOOK */
+      .nav-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        filter: grayscale(100%);
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
       footer {
         margin-top: auto;
         padding: 20px;
@@ -316,7 +322,7 @@
         }
       }
 
-      /* --- MOBILE OPTIMIZATIONS (From Test1) --- */
+      /* --- MOBILE OPTIMIZATIONS --- */
       @media (max-width: 768px) {
         .glass-box {
           border-radius: 20px;
@@ -327,7 +333,6 @@
           padding: 30px 25px;
         }
 
-        /* Force vertical stack on small screens */
         .options-container {
           flex-direction: column;
           gap: 12px;
@@ -345,10 +350,12 @@
         }
         .nav-controls {
           padding: 20px 25px;
+          flex-wrap: wrap;
         }
       }
     </style>
   </head>
+
   <body>
     <div class="animated-bg"></div>
     <canvas id="particleCanvas"></canvas>
@@ -374,7 +381,20 @@
         >
           ← Return
         </button>
+
+        <!-- ✅ NEW NEXT BUTTON -->
+        <button
+          type="button"
+          id="nextBtn"
+          class="nav-btn btn-outline"
+          onclick="nextQuestionManual()"
+          disabled
+        >
+          Next →
+        </button>
+
         <div style="flex-grow: 1"></div>
+
         <button
           type="button"
           id="submitBtn"
@@ -387,8 +407,7 @@
     </div>
 
     <footer>
-      <span style="font-family: Arial, sans-serif">&copy;</span> 2026
-      KnowThySelf
+      <span style="font-family: Arial, sans-serif">&copy;</span> 2026 KnowThySelf
     </footer>
 
     <script>
@@ -447,6 +466,7 @@
         Agree: 2,
         "Strongly Agree": 3,
       };
+
       const questions = [
         {
           text: "I feel energized after spending time with a group of people.",
@@ -550,7 +570,6 @@
         },
       ];
 
-      // Choices ordered: Strongly Agree (Left) -> Strongly Disagree (Right)
       const choices = [
         "Strongly Agree",
         "Agree",
@@ -576,7 +595,8 @@
         choices.forEach((choice) => {
           const wrapper = document.createElement("div");
           wrapper.className = "radio-wrapper";
-          // DELAY REMOVED HERE: Removed setTimeout(nextQuestion, 350)
+
+          // ✅ Removed auto nextQuestion()
           wrapper.innerHTML = `<input type="radio" id="q${idx}_${choice.replace(
             /\s/g,
             ""
@@ -584,38 +604,38 @@
             scoring[choice]
           }" onclick="saveAnswer(${idx}, ${
             scoring[choice]
-          }); updateProgress(); nextQuestion()">
-                                     <label for="q${idx}_${choice.replace(
-            /\s/g,
-            ""
-          )}">${choice.replace(" ", "<br>")}</label>`;
+          }); updateProgress(); updateNextButton();">
+            <label for="q${idx}_${choice.replace(/\s/g, "")}">${choice.replace(
+            " ",
+            "<br>"
+          )}</label>`;
+
           container.appendChild(wrapper);
         });
+
         div.appendChild(container);
         form.appendChild(div);
       });
 
       // Initialize First Card
       window.onload = () => {
-        restoreAnswers(); // Load answers from storage
-        restoreSession(); // Load page number
+        restoreAnswers();
+        restoreSession();
         updateProgress();
+        updateNextButton(); // ✅ important
       };
 
-      // --- NEW FUNCTION: SAVE ANSWER TO STORAGE ---
       function saveAnswer(qIndex, value) {
         let answers = JSON.parse(localStorage.getItem("mbtiAnswers")) || {};
         answers[qIndex] = value;
         localStorage.setItem("mbtiAnswers", JSON.stringify(answers));
       }
 
-      // --- NEW FUNCTION: RESTORE ANSWERS FROM STORAGE ---
       function restoreAnswers() {
         let answers = JSON.parse(localStorage.getItem("mbtiAnswers"));
         if (!answers) return;
 
         for (const [qIndex, value] of Object.entries(answers)) {
-          // Find the radio button for this question with this value
           const radios = document.getElementsByName(parseInt(qIndex) + 1);
           for (const radio of radios) {
             if (parseInt(radio.dataset.value) === parseInt(value)) {
@@ -633,6 +653,7 @@
         document
           .querySelectorAll(".question-card")
           .forEach((c) => c.classList.remove("active"));
+
         const curr = document.getElementById(`card-${currentStep}`);
         if (curr) curr.classList.add("active");
 
@@ -648,6 +669,7 @@
           currentStep++;
           next.classList.add("active");
           updateButtons();
+          updateNextButton(); // ✅ important
         } else {
           updateButtons(true);
         }
@@ -662,13 +684,50 @@
           currentStep--;
           prev.classList.add("active");
           updateButtons();
+          updateNextButton(); // ✅ important
         }
+      }
+
+      // ✅ Next enabled only when question answered
+      function updateNextButton() {
+        const nextBtn = document.getElementById("nextBtn");
+
+        // if last question, hide logic handled by updateButtons
+        if (currentStep >= questions.length - 1) {
+          nextBtn.disabled = true;
+          return;
+        }
+
+        const radios = document.getElementsByName(currentStep + 1);
+        let answered = false;
+        for (const r of radios) {
+          if (r.checked) {
+            answered = true;
+            break;
+          }
+        }
+
+        nextBtn.disabled = !answered;
+      }
+
+      // ✅ manual next button logic
+      function nextQuestionManual() {
+        if (document.getElementById("nextBtn").disabled) {
+          alert("Please select an option first.");
+          return;
+        }
+        nextQuestion();
       }
 
       function updateButtons(isEnd = false) {
         document
           .getElementById("backBtn")
           .classList.toggle("visible", currentStep > 0);
+
+        document
+          .getElementById("nextBtn")
+          .classList.toggle("visible", currentStep < questions.length - 1);
+
         document
           .getElementById("submitBtn")
           .classList.toggle(
@@ -701,6 +760,7 @@
             currentStep = i;
             localStorage.setItem("mbtiStep", i);
             updateButtons();
+            updateNextButton(); // ✅ important
             return;
           }
 
